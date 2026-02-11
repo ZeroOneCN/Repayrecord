@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#g)"/>
+  <!-- Yen (¥) symbol -->
+  <path d="M20 20 L32 36 L44 20" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 40 H40" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  <path d="M24 46 H40" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,22 @@
+{
+  "name": "repay-record-frontend",
+  "version": "1.0.0",
+  "description": "借款还款数据管理前端",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "dev": "vue-cli-service serve --mode development"
+  },
+  "dependencies": {
+    "ant-design-vue": "^4.0.0",
+    "axios": "^1.4.0",
+    "dayjs": "^1.11.9",
+    "echarts": "^6.0.0",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4"
+  },
+  "devDependencies": {
+    "@vue/cli-service": "^5.0.8",
+    "baseline-browser-mapping": "^2.9.19"
+  }
+}
