@@ -93,11 +93,13 @@ watch(() => route.path, () => updateSelectedByRoute());
 .header {
   display: flex;
   align-items: center;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.35);
   position: sticky;
   top: 0;
   z-index: 1000;
+  backdrop-filter: blur(10px);
 }
 
 .header-inner {
@@ -110,22 +112,66 @@ watch(() => route.path, () => updateSelectedByRoute());
 .logo {
   display: flex;
   align-items: center;
-  color: #1677ff;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .logo-icon {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
+  filter: brightness(0) invert(1);
+  drop-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .logo-text {
-  color: #1677ff;
-  margin: 0 0 0 8px;
-  font-size: 18px;
+  color: #fff;
+  margin: 0 0 0 10px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 :deep(.ant-menu-horizontal) {
   border-bottom: none;
+  background: transparent;
+}
+
+:deep(.ant-menu-horizontal > .ant-menu-item-selected) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 6px;
+  margin: 0 4px;
+}
+
+:deep(.ant-menu-horizontal > .ant-menu-item-selected::after) {
+  border-bottom-color: transparent;
+}
+
+:deep(.ant-menu-horizontal > .ant-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+:deep(.ant-menu-horizontal > .ant-menu-item) {
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  margin: 0 2px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.ant-menu-horizontal > .ant-menu-item:hover) {
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+:deep(.ant-menu-item-icon) {
+  font-size: 18px;
+}
+
+:deep(.ant-menu-title-content) {
+  font-size: 14px;
 }
 
 .header {
@@ -137,23 +183,31 @@ watch(() => route.path, () => updateSelectedByRoute());
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: linear-gradient(180deg, #f0f5ff 0%, #ffffff 100%);
 }
 
 .main-scroll {
   flex: 1;
   overflow: auto;
-  padding: 0 16px 16px;
+  padding: 16px;
+  background: linear-gradient(180deg, #f8f9fa 0%, #f0f2f5 100%);
 }
 
 .breadcrumb {
-  margin: 12px 0;
+  margin: 8px 0 16px;
+  font-weight: 500;
+}
+
+:deep(.ant-breadcrumb-link) {
+  color: #1890ff;
 }
 
 .content {
-  background: #fff;
-  padding: 16px;
+  background: transparent;
+  padding: 24px;
   margin: 0;
-  min-height: 280px;
-  border-radius: 6px;
+  min-height: calc(100vh - 130px);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 </style>

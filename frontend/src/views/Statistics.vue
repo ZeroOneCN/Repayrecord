@@ -56,6 +56,11 @@
               <a-statistic title="未还款金额" :value="Number(monthlyStats.unpaid_amount || 0)" :precision="2" prefix="¥" />
             </a-card>
           </a-col>
+          <a-col :xs="24" :sm="12" :md="8" :lg="6">
+            <a-card size="small">
+              <a-statistic title="总利息" :value="Number(monthlyStats.total_interest || 0)" :precision="2" prefix="¥" />
+            </a-card>
+          </a-col>
         </a-row>
       </a-spin>
 

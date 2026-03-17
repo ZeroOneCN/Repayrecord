@@ -20,8 +20,8 @@
               <a-button size="small" danger @click="deletePlatform(record)">删除</a-button>
             </a-space>
           </template>
-          <template v-if="column.key === 'created_at'">
-            {{ formatDateTime(record.created_at) }}
+          <template v-if="column.key === 'credit_limit'">
+            ¥{{ parseFloat(record.credit_limit || 0).toFixed(2) }}
           </template>
         </template>
       </a-table>
@@ -60,6 +60,16 @@
             placeholder="1-31"
           />
         </a-form-item>
+        
+        <a-form-item label="额度" name="credit_limit">
+          <a-input-number
+            v-model:value="formState.credit_limit"
+            :min="0"
+            :precision="2"
+            placeholder="请输入额度"
+            style="width: 100%"
+          />
+        </a-form-item>
       </a-form>
     </a-modal>
   </div>
@@ -69,7 +79,6 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import { debtPlatformAPI } from '@/services/api';
-import { formatDateTime } from '@/services/format';
 import { requiredRule, validDayOfMonthRule } from '@/services/validators';
 
 const loading = ref(false);
@@ -81,7 +90,8 @@ const formRef = ref();
 const formState = reactive({
   name: '',
   billing_day: null,
-  repayment_day: null
+  repayment_day: null,
+  credit_limit: null
 });
 
 const rules = {
@@ -107,9 +117,9 @@ const columns = [
     key: 'repayment_day'
   },
   {
-    title: '创建时间',
-    dataIndex: 'created_at',
-    key: 'created_at'
+    title: '额度',
+    key: 'credit_limit',
+    width: 120
   },
   {
     title: '操作',
@@ -138,7 +148,8 @@ const showModal = () => {
   Object.assign(formState, {
     name: '',
     billing_day: null,
-    repayment_day: null
+    repayment_day: null,
+    credit_limit: null
   });
   modalVisible.value = true;
 };
@@ -148,7 +159,8 @@ const editPlatform = (record) => {
   Object.assign(formState, {
     name: record.name,
     billing_day: record.billing_day,
-    repayment_day: record.repayment_day
+    repayment_day: record.repayment_day,
+    credit_limit: record.credit_limit
   });
   modalVisible.value = true;
 };

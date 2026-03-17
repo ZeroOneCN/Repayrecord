@@ -60,6 +60,24 @@ router.get('/', async (req, res) => {
   }
 });
 
+// 获取到期与逾期提醒摘要
+router.get('/alerts', async (req, res) => {
+  try {
+    const days = req.query.upcoming_days ? parseInt(req.query.upcoming_days, 10) : 3;
+    if (!isPositiveInt(days) && days !== 0) {
+      return res.status(400).json({ error: '提醒天数不合法' });
+    }
+    const cacheKey = `bill:alerts:${days}`;
+    const cached = getCache(cacheKey);
+    if (cached) return res.json(cached);
+    const summary = await Bill.getAlertSummary(days);
+    setCache(cacheKey, summary);
+    res.json(summary);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 获取单个账单
 router.get('/:id', async (req, res) => {
   try {
@@ -76,7 +94,7 @@ router.get('/:id', async (req, res) => {
 // 创建新账单
 router.post('/', async (req, res) => {
   try {
-    const { platform_id, amount, billing_month, due_date, notes } = req.body;
+    const { platform_id, amount, billing_month, due_date, interest, notes } = req.body;
     
     if (!platform_id || !amount || !billing_month) {
       return res.status(400).json({ error: '缺少必要参数' });
@@ -117,6 +135,7 @@ router.post('/', async (req, res) => {
       amount: parseFloat(amount),
       billing_month,
       due_date: finalDueDate,
+      interest: parseFloat(interest) || 0,
       notes: notes || ''
     });
 
@@ -132,10 +151,10 @@ router.post('/', async (req, res) => {
 // 更新账单信息
 router.put('/:id', async (req, res) => {
   try {
-    const { amount, due_date, notes } = req.body;
+    const { amount, due_date, interest, notes } = req.body;
     
     if (!amount) {
-      return res.status(400).json({ error: '缺少必要参数: amount' });
+      return res.status(400).json({ error: '缺少必要参数：amount' });
     }
     if (!isPositiveNumber(amount)) {
       return res.status(400).json({ error: '金额必须大于 0' });
@@ -165,6 +184,7 @@ router.put('/:id', async (req, res) => {
     await Bill.update(req.params.id, {
       amount: parseFloat(amount),
       due_date: finalDueDate,
+      interest: parseFloat(interest) || 0,
       notes: notes || ''
     });
 
@@ -242,24 +262,6 @@ router.get('/upcoming/:days?', async (req, res) => {
     const days = parseInt(req.params.days) || 7;
     const bills = await Bill.getUpcomingBills(days);
     res.json(bills);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 获取到期与逾期提醒摘要
-router.get('/alerts', async (req, res) => {
-  try {
-    const days = req.query.upcoming_days ? parseInt(req.query.upcoming_days, 10) : 3;
-    if (!isPositiveInt(days) && days !== 0) {
-      return res.status(400).json({ error: '提醒天数不合法' });
-    }
-    const cacheKey = `bill:alerts:${days}`;
-    const cached = getCache(cacheKey);
-    if (cached) return res.json(cached);
-    const summary = await Bill.getAlertSummary(days);
-    setCache(cacheKey, summary);
-    res.json(summary);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

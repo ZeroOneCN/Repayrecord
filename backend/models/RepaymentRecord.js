@@ -4,7 +4,7 @@ class RepaymentRecord {
   // 获取所有还款记录（联合账单与平台，避免前端多次请求）
   static async getAllWithPlatform() {
     const sql = `
-      SELECT rr.*, dp.name as platform_name
+      SELECT rr.*, rr.interest, dp.name as platform_name
       FROM repayment_records rr
       JOIN bills b ON rr.bill_id = b.id
       JOIN debt_platforms dp ON b.platform_id = dp.id
@@ -40,7 +40,7 @@ class RepaymentRecord {
     const offset = Math.max(0, Math.floor((safePage - 1) * safeSize));
     const limit = Math.floor(safeSize);
     const sql = `
-      SELECT rr.*, dp.name as platform_name
+      SELECT rr.*, rr.interest, dp.name as platform_name
       FROM repayment_records rr
       JOIN bills b ON rr.bill_id = b.id
       JOIN debt_platforms dp ON b.platform_id = dp.id
@@ -64,7 +64,7 @@ class RepaymentRecord {
     }
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const sql = `
-      SELECT rr.*, dp.name as platform_name
+      SELECT rr.*, rr.interest, dp.name as platform_name
       FROM repayment_records rr
       JOIN bills b ON rr.bill_id = b.id
       JOIN debt_platforms dp ON b.platform_id = dp.id
@@ -80,9 +80,9 @@ class RepaymentRecord {
   }
 
   // 创建还款记录
-  static async create({ bill_id, amount, repayment_date, notes }) {
-    const sql = 'INSERT INTO repayment_records (bill_id, amount, repayment_date, notes) VALUES (?, ?, ?, ?)';
-    const result = await query(sql, [bill_id, amount, repayment_date, notes]);
+  static async create({ bill_id, amount, repayment_date, interest, notes }) {
+    const sql = 'INSERT INTO repayment_records (bill_id, amount, repayment_date, interest, notes) VALUES (?, ?, ?, ?, ?)';
+    const result = await query(sql, [bill_id, amount, repayment_date, interest || 0, notes]);
     return result.insertId;
   }
 

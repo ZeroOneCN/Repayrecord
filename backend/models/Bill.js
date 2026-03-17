@@ -87,16 +87,16 @@ class Bill {
   }
 
   // 创建新账单
-  static async create({ platform_id, amount, billing_month, due_date, notes }) {
-    const sql = 'INSERT INTO bills (platform_id, amount, billing_month, due_date, notes) VALUES (?, ?, ?, ?, ?)';
-    const result = await query(sql, [platform_id, amount, billing_month, due_date, notes]);
+  static async create({ platform_id, amount, billing_month, due_date, interest, notes }) {
+    const sql = 'INSERT INTO bills (platform_id, amount, billing_month, due_date, interest, notes) VALUES (?, ?, ?, ?, ?, ?)';
+    const result = await query(sql, [platform_id, amount, billing_month, due_date, interest || 0, notes]);
     return result.insertId;
   }
 
   // 更新账单信息
-  static async update(id, { amount, due_date, notes }) {
-    const sql = 'UPDATE bills SET amount = ?, due_date = ?, notes = ? WHERE id = ?';
-    await query(sql, [amount, due_date, notes, id]);
+  static async update(id, { amount, due_date, interest, notes }) {
+    const sql = 'UPDATE bills SET amount = ?, due_date = ?, interest = ?, notes = ? WHERE id = ?';
+    await query(sql, [amount, due_date, interest || 0, notes, id]);
     return true;
   }
 
@@ -122,13 +122,14 @@ class Bill {
         COUNT(*) as total_bills,
         SUM(amount) as total_amount,
         SUM(CASE WHEN is_paid = TRUE THEN amount ELSE 0 END) as paid_amount,
-        SUM(CASE WHEN is_paid = FALSE THEN amount ELSE 0 END) as unpaid_amount
+        SUM(CASE WHEN is_paid = FALSE THEN amount ELSE 0 END) as unpaid_amount,
+        SUM(interest) as total_interest
       FROM bills
       WHERE billing_month = ?
       GROUP BY billing_month
     `;
     const results = await query(sql, [month]);
-    return results[0] || { total_bills: 0, total_amount: 0, paid_amount: 0, unpaid_amount: 0 };
+    return results[0] || { total_bills: 0, total_amount: 0, paid_amount: 0, unpaid_amount: 0, total_interest: 0 };
   }
 
   // 获取指定月份各平台借款总额

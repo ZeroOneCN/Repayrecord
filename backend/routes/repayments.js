@@ -77,7 +77,7 @@ router.get('/bill/:bill_id', async (req, res) => {
 // 创建还款记录
 router.post('/', async (req, res) => {
   try {
-    const { bill_id, amount, repayment_date, notes } = req.body;
+    const { bill_id, amount, repayment_date, interest, notes } = req.body;
     
     if (!bill_id || !amount || !repayment_date) {
       return res.status(400).json({ error: '缺少必要参数' });
@@ -100,6 +100,7 @@ router.post('/', async (req, res) => {
       bill_id: parseInt(bill_id, 10),
       amount: parseFloat(amount),
       repayment_date,
+      interest: parseFloat(interest) || 0,
       notes: notes || ''
     });
 

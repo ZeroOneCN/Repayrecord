@@ -46,6 +46,9 @@
             <template v-if="column.key === 'amount'">
               ¥{{ parseFloat(record.amount || 0).toFixed(2) }}
             </template>
+            <template v-if="column.key === 'interest'">
+              ¥{{ parseFloat(record.interest || 0).toFixed(2) }}
+            </template>
             <template v-if="column.key === 'due_date'">
               {{ formatDate(record.due_date) }}
             </template>
@@ -103,6 +106,19 @@
             placeholder="请输入金额"
             style="width: 100%"
           />
+        </a-form-item>
+        
+        <a-form-item label="利息" name="interest">
+          <a-input-number
+            v-model:value="formState.interest"
+            :min="0"
+            :precision="2"
+            placeholder="请输入利息"
+            style="width: 100%"
+          />
+          <template #extra>
+            <span style="font-size: 12px; color: #999;">已计入账单（总金额 = 本金 + 利息）</span>
+          </template>
         </a-form-item>
         
         <a-form-item label="账单月份" name="billing_month">
@@ -172,6 +188,7 @@ const filters = reactive({
 const formState = reactive({
   platform_id: undefined,
   amount: undefined,
+  interest: undefined,
   billing_month: undefined,
   due_date: undefined,
   notes: ''
@@ -193,6 +210,11 @@ const columns = [
   {
     title: '金额',
     key: 'amount',
+    width: 100
+  },
+  {
+    title: '利息',
+    key: 'interest',
     width: 100
   },
   {
@@ -298,6 +320,7 @@ const showModal = () => {
   Object.assign(formState, {
     platform_id: undefined,
     amount: undefined,
+    interest: undefined,
     billing_month: undefined,
     due_date: undefined,
     notes: ''
@@ -310,6 +333,7 @@ const editBill = (record) => {
   Object.assign(formState, {
     platform_id: record.platform_id,
     amount: record.amount,
+    interest: record.interest,
     billing_month: dayjs(record.billing_month + '-01'),
     due_date: dayjs(record.due_date),
     notes: record.notes || ''
@@ -325,6 +349,7 @@ const handleOk = async () => {
     const submitData = {
       platform_id: formState.platform_id,
       amount: formState.amount,
+      interest: formState.interest,
       billing_month: dayjs(formState.billing_month).format('YYYY-MM'),
       due_date: dayjs(formState.due_date).format('YYYY-MM-DD'),
       notes: formState.notes

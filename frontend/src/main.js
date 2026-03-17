@@ -9,6 +9,22 @@ import './styles/global.css';
 import { settingsAPI } from '@/services/api';
 import { savePreferences } from '@/services/preferences';
 
+// 过滤浏览器插件导致的错误
+window.addEventListener('error', (event) => {
+  if (event.message?.includes('chrome-extension://') || 
+      event.filename?.includes('chrome-extension://')) {
+    event.preventDefault();
+    console.warn('忽略浏览器插件错误:', event.message);
+  }
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  if (String(event.reason)?.includes('chrome-extension://')) {
+    event.preventDefault();
+    console.warn('忽略浏览器插件 Promise 错误:', event.reason);
+  }
+});
+
 async function bootstrap() {
   const app = createApp(App);
   app.use(Antd);

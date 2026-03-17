@@ -32,7 +32,7 @@ api.interceptors.response.use(
   }
 );
 
-// 负债平台API
+// 负债平台 API
 export const debtPlatformAPI = {
   getAll: () => api.get('/debt-platforms'),
   getById: (id) => api.get(`/debt-platforms/${id}`),

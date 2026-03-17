@@ -34,8 +34,11 @@ async function initializeDatabase() {
         name VARCHAR(100) NOT NULL,
         billing_day INT NOT NULL COMMENT '账单出账日',
         repayment_day INT NOT NULL COMMENT '还款日',
+        credit_limit DECIMAL(10, 2) DEFAULT 0 COMMENT '额度',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_name (name),
+        INDEX idx_created_at (created_at)
       )
     `);
     console.log('负债平台表创建成功');
@@ -46,14 +49,20 @@ async function initializeDatabase() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         platform_id INT NOT NULL,
         amount DECIMAL(10, 2) NOT NULL,
-        billing_month VARCHAR(7) NOT NULL COMMENT '账单月份，格式: YYYY-MM',
+        billing_month VARCHAR(7) NOT NULL COMMENT '账单月份，格式：YYYY-MM',
         due_date DATE NOT NULL COMMENT '还款截止日期',
         is_paid BOOLEAN DEFAULT FALSE,
         paid_date DATE NULL,
+        interest DECIMAL(10, 2) DEFAULT 0 COMMENT '利息',
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (platform_id) REFERENCES debt_platforms(id) ON DELETE CASCADE
+        FOREIGN KEY (platform_id) REFERENCES debt_platforms(id) ON DELETE CASCADE,
+        INDEX idx_platform_id (platform_id),
+        INDEX idx_billing_month (billing_month),
+        INDEX idx_due_date (due_date),
+        INDEX idx_is_paid (is_paid),
+        INDEX idx_created_at (created_at)
       )
     `);
     console.log('账单表创建成功');
@@ -65,9 +74,13 @@ async function initializeDatabase() {
         bill_id INT NOT NULL,
         amount DECIMAL(10, 2) NOT NULL,
         repayment_date DATE NOT NULL,
+        interest DECIMAL(10, 2) DEFAULT 0 COMMENT '还款利息',
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
+        FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE,
+        INDEX idx_bill_id (bill_id),
+        INDEX idx_repayment_date (repayment_date),
+        INDEX idx_created_at (created_at)
       )
     `);
     console.log('还款记录表创建成功');

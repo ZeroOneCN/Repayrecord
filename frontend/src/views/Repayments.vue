@@ -35,6 +35,9 @@
             <template v-if="column.key === 'amount'">
               ¥{{ parseFloat(record.amount || 0).toFixed(2) }}
             </template>
+            <template v-if="column.key === 'interest'">
+              ¥{{ parseFloat(record.interest || 0).toFixed(2) }}
+            </template>
             <template v-if="column.key === 'repayment_date'">
               {{ formatDate(record.repayment_date) }}
             </template>
@@ -77,6 +80,19 @@
             placeholder="请输入还款金额"
             style="width: 100%"
           />
+        </a-form-item>
+        
+        <a-form-item label="还款利息" name="interest">
+          <a-input-number
+            v-model:value="formState.interest"
+            :min="0"
+            :precision="2"
+            placeholder="请输入还款利息"
+            style="width: 100%"
+          />
+          <template #extra>
+            <span style="font-size: 12px; color: #999;">已计入还款记录</span>
+          </template>
         </a-form-item>
         
         <a-form-item label="还款日期" name="repayment_date">
@@ -131,6 +147,7 @@ const filters = reactive({
 const formState = reactive({
   bill_id: undefined,
   amount: undefined,
+  interest: undefined,
   repayment_date: undefined,
   notes: ''
 });
@@ -150,6 +167,11 @@ const columns = [
   {
     title: '还款金额',
     key: 'amount',
+    width: 100
+  },
+  {
+    title: '还款利息',
+    key: 'interest',
     width: 100
   },
   {
@@ -248,6 +270,7 @@ const showModal = () => {
   Object.assign(formState, {
     bill_id: undefined,
     amount: undefined,
+    interest: undefined,
     repayment_date: undefined,
     notes: ''
   });
@@ -261,6 +284,7 @@ const handleOk = async () => {
     const submitData = {
       bill_id: formState.bill_id,
       amount: formState.amount,
+      interest: formState.interest,
       repayment_date: dayjs(formState.repayment_date).format('YYYY-MM-DD'),
       notes: formState.notes
     };

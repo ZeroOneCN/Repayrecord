@@ -30,7 +30,7 @@ router.get('/:id', async (req, res) => {
 // 创建新平台
 router.post('/', async (req, res) => {
   try {
-    const { name, billing_day, repayment_day } = req.body;
+    const { name, billing_day, repayment_day, credit_limit } = req.body;
     
     if (!name || !billing_day || !repayment_day) {
       return res.status(400).json({ error: '缺少必要参数' });
@@ -42,7 +42,8 @@ router.post('/', async (req, res) => {
     const platformId = await DebtPlatform.create({
       name: String(name).trim(),
       billing_day: parseInt(billing_day, 10),
-      repayment_day: parseInt(repayment_day, 10)
+      repayment_day: parseInt(repayment_day, 10),
+      credit_limit: parseFloat(credit_limit) || 0
     });
 
     res.status(201).json({ 
@@ -57,7 +58,7 @@ router.post('/', async (req, res) => {
 // 更新平台
 router.put('/:id', async (req, res) => {
   try {
-    const { name, billing_day, repayment_day } = req.body;
+    const { name, billing_day, repayment_day, credit_limit } = req.body;
     
     if (!name || !billing_day || !repayment_day) {
       return res.status(400).json({ error: '缺少必要参数' });
@@ -69,7 +70,8 @@ router.put('/:id', async (req, res) => {
     await DebtPlatform.update(req.params.id, {
       name: String(name).trim(),
       billing_day: parseInt(billing_day, 10),
-      repayment_day: parseInt(repayment_day, 10)
+      repayment_day: parseInt(repayment_day, 10),
+      credit_limit: parseFloat(credit_limit) || 0
     });
 
     res.json({ message: '平台更新成功' });
