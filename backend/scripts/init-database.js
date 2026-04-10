@@ -1,23 +1,42 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
+// 日志输出辅助函数
+const log = {
+  info: (msg) => console.log(`\x1b[36m[INFO]\x1b[0m ${msg}`),
+  success: (msg) => console.log(`\x1b[32m[SUCCESS]\x1b[0m ${msg}`),
+  warn: (msg) => console.log(`\x1b[33m[WARN]\x1b[0m ${msg}`),
+  error: (msg) => console.log(`\x1b[31m[ERROR]\x1b[0m ${msg}`),
+  table: (name) => console.log(`\x1b[35m[TABLE]\x1b[0m ${name}`)
+};
+
+// 分隔线
+const divider = '━'.repeat(50);
+
 async function initializeDatabase() {
+  let connection;
+  
   try {
+    console.log(`\n${divider}`);
+    log.info('开始初始化数据库...');
+    console.log(`${divider}\n`);
+
     // 创建数据库连接（不指定数据库名）
-    let connection = await mysql.createConnection({
+    log.info('连接 MySQL 服务器...');
+    connection = await mysql.createConnection({
       host: process.env.DB_HOST,
       port: process.env.DB_PORT,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD
     });
-
-    console.log('连接到MySQL服务器成功');
+    log.success('MySQL 服务器连接成功');
 
     // 创建数据库
+    log.info(`创建数据库：${process.env.DB_NAME}`);
     await connection.execute(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`);
-    console.log(`数据库 ${process.env.DB_NAME} 创建成功`);
+    log.success(`数据库 ${process.env.DB_NAME} 创建成功`);
 
-    // 使用数据库（重新创建连接指定数据库）
+    // 关闭当前连接，重新连接到指定数据库
     await connection.end();
     connection = await mysql.createConnection({
       host: process.env.DB_HOST,
@@ -27,7 +46,12 @@ async function initializeDatabase() {
       database: process.env.DB_NAME
     });
 
+    console.log(`\n${divider}`);
+    log.info('开始创建数据表...');
+    console.log(`${divider}\n`);
+
     // 创建负债平台表
+    log.table('创建表：debt_platforms');
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS debt_platforms (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,9 +65,10 @@ async function initializeDatabase() {
         INDEX idx_created_at (created_at)
       )
     `);
-    console.log('负债平台表创建成功');
+    log.success('debt_platforms 表创建成功 ✓');
 
     // 创建账单表
+    log.table('创建表：bills');
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS bills (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -65,9 +90,10 @@ async function initializeDatabase() {
         INDEX idx_created_at (created_at)
       )
     `);
-    console.log('账单表创建成功');
+    log.success('bills 表创建成功 ✓');
 
     // 创建还款记录表
+    log.table('创建表：repayment_records');
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS repayment_records (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -83,9 +109,10 @@ async function initializeDatabase() {
         INDEX idx_created_at (created_at)
       )
     `);
-    console.log('还款记录表创建成功');
+    log.success('repayment_records 表创建成功 ✓');
 
     // 创建系统设置表
+    log.table('创建表：system_settings');
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS system_settings (
         \`key\` VARCHAR(100) PRIMARY KEY,
@@ -93,13 +120,26 @@ async function initializeDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
-    console.log('系统设置表创建成功');
+    log.success('system_settings 表创建成功 ✓');
 
-    console.log('数据库初始化完成！');
-    await connection.end();
+    console.log(`\n${divider}`);
+    log.success('数据库初始化完成！');
+    console.log(`${divider}\n`);
     
+    console.log('已创建的数据表:');
+    console.log('  └─ debt_platforms    (借款平台表)');
+    console.log('  └─ bills            (账单表)');
+    console.log('  └─ repayment_records (还款记录表)');
+    console.log('  └─ system_settings  (系统设置表)\n');
+
+    await connection.end();
+
   } catch (error) {
-    console.error('数据库初始化失败:', error);
+    console.log(`\n${divider}`);
+    log.error('数据库初始化失败！');
+    log.error(`错误信息：${error.message}`);
+    console.log(`${divider}\n`);
+    if (connection) await connection.end();
     process.exit(1);
   }
 }

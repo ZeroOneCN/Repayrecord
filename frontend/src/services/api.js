@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axios from 'axios'
 
-const API_BASE_URL = process.env.VUE_APP_API_BASE_URL || '/api';
+const API_BASE_URL = import.meta.env.VUE_APP_API_BASE_URL || '/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -8,29 +8,29 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   }
-});
+})
 
 // 请求拦截器
 api.interceptors.request.use(
   (config) => {
-    console.log('发起请求:', config.method?.toUpperCase(), config.url);
-    return config;
+    console.log('发起请求:', config.method?.toUpperCase(), config.url)
+    return config
   },
   (error) => {
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)
 
 // 响应拦截器
 api.interceptors.response.use(
   (response) => {
-    return response.data;
+    return response.data
   },
   (error) => {
-    console.error('API请求错误:', error);
-    return Promise.reject(error);
+    console.error('API 请求错误:', error)
+    return Promise.reject(error)
   }
-);
+)
 
 // 负债平台 API
 export const debtPlatformAPI = {
@@ -41,9 +41,9 @@ export const debtPlatformAPI = {
   delete: (id) => api.delete(`/debt-platforms/${id}`),
   getStats: () => api.get('/debt-platforms/stats/overview'),
   getPlatformStats: (id) => api.get(`/debt-platforms/${id}/stats`)
-};
+}
 
-// 账单API
+// 账单 API
 export const billAPI = {
   getAll: (filters = {}) => api.get('/bills', { params: filters }),
   getById: (id) => api.get(`/bills/${id}`),
@@ -55,32 +55,32 @@ export const billAPI = {
   getMonthlyPlatformSums: (month) => api.get(`/bills/stats/monthly/platform/${month}`),
   getUpcoming: (days = 7) => api.get(`/bills/upcoming/${days}`),
   getAlerts: (upcoming_days = 3) => api.get('/bills/alerts', { params: { upcoming_days } })
-};
+}
 
-// 还款记录API
+// 还款记录 API
 export const repaymentAPI = {
   getAllRecords: (params = {}) => api.get('/repayments/records', { params }),
   getByBillId: (bill_id) => api.get(`/repayments/bill/${bill_id}`),
   create: (data) => api.post('/repayments', data),
   delete: (id) => api.delete(`/repayments/${id}`),
   getMonthlyStats: (month) => api.get(`/repayments/stats/monthly/${month}`),
-  getPlatformStats: (platform_id, start_date, end_date) => 
-    api.get(`/repayments/stats/platform/${platform_id}`, { 
-      params: { start_date, end_date } 
+  getPlatformStats: (platform_id, start_date, end_date) =>
+    api.get(`/repayments/stats/platform/${platform_id}`, {
+      params: { start_date, end_date }
     }),
   getDailyTrend: (start_date, end_date, platform_id) =>
     api.get('/repayments/stats/daily', { params: { start_date, end_date, platform_id } }),
   getByDateRange: (start_date, end_date, platform_id) =>
     api.get('/repayments/records/by-date', { params: { start_date, end_date, platform_id } })
-};
+}
 
-// 系统设置API
+// 系统设置 API
 export const settingsAPI = {
   getAll: () => api.get('/settings'),
   update: (data) => api.put('/settings', data)
-};
+}
 
 // 健康检查
-export const healthCheck = () => api.get('/health');
+export const healthCheck = () => api.get('/health')
 
-export default api;
+export default api

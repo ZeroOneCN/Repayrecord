@@ -1,549 +1,545 @@
 <template>
-  <div class="statistics">
-    <a-space direction="vertical" size="middle" style="width: 100%">
-      <a-card :bordered="false" class="filters-card">
-        <a-space wrap>
-          <a-date-picker
-            v-model:value="statsFilters.month"
-            placeholder="选择月份"
-            format="YYYY-MM"
-            picker="month"
-          />
-          <a-radio-group v-model:value="rangeMode">
-            <a-radio-button value="last30">最近30天</a-radio-button>
-            <a-radio-button value="custom">自定义范围</a-radio-button>
-          </a-radio-group>
-          <a-range-picker
-            v-if="rangeMode === 'custom'"
-            v-model:value="customRange"
-            format="YYYY-MM-DD"
-          />
-          <a-select
-            v-model:value="selectedPlatformIds"
-            mode="multiple"
-            :options="platformOptions"
-            style="min-width: 260px"
-            placeholder="筛选平台（可多选）"
-            allow-clear
-          />
-          <a-radio-group v-model:value="chartType">
-            <a-radio-button value="line">折线</a-radio-button>
-            <a-radio-button value="bar">柱状</a-radio-button>
-          </a-radio-group>
-          <a-button type="primary" :loading="loading" @click="loadStats">刷新</a-button>
-        </a-space>
-      </a-card>
+  <AppLayout>
+    <div style="padding: 0;">
+      <!-- 页面标题 -->
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 24px; font-weight: 600; color: #141414; margin: 0 0 8px 0; display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 28px;">📈</span>
+          数据统计
+        </h1>
+        <p style="font-size: 16px; color: #8c8c8c; margin: 0;">多维度分析您的借款和还款数据，可视化趋势图表</p>
+      </div>
 
-      <a-spin :spinning="loading">
-        <a-row :gutter="[16, 16]">
-          <a-col :xs="24" :sm="12" :md="8" :lg="6">
-            <a-card size="small">
-              <a-statistic title="总账单数" :value="Number(monthlyStats.total_bills || 0)" />
-            </a-card>
-          </a-col>
-          <a-col :xs="24" :sm="12" :md="8" :lg="6">
-            <a-card size="small">
-              <a-statistic title="总金额" :value="Number(monthlyStats.total_amount || 0)" :precision="2" prefix="¥" />
-            </a-card>
-          </a-col>
-          <a-col :xs="24" :sm="12" :md="8" :lg="6">
-            <a-card size="small">
-              <a-statistic title="已还款金额" :value="Number(monthlyStats.paid_amount || 0)" :precision="2" prefix="¥" />
-            </a-card>
-          </a-col>
-          <a-col :xs="24" :sm="12" :md="8" :lg="6">
-            <a-card size="small">
-              <a-statistic title="未还款金额" :value="Number(monthlyStats.unpaid_amount || 0)" :precision="2" prefix="¥" />
-            </a-card>
-          </a-col>
-          <a-col :xs="24" :sm="12" :md="8" :lg="6">
-            <a-card size="small">
-              <a-statistic title="总利息" :value="Number(monthlyStats.total_interest || 0)" :precision="2" prefix="¥" />
-            </a-card>
-          </a-col>
-        </a-row>
-      </a-spin>
-
-      <a-card :bordered="false" class="charts-card">
-        <a-tabs v-model:activeKey="activeTab" @change="handleTabChange">
-          <a-tab-pane key="trend" tab="还款趋势">
-            <a-row :gutter="[16, 16]" style="margin-bottom: 12px">
-              <a-col :xs="24" :sm="12" :md="6">
-                <a-statistic title="总额" :value="trendSummary.total" :precision="2" prefix="¥" />
-              </a-col>
-              <a-col :xs="24" :sm="12" :md="6">
-                <a-statistic title="日均" :value="trendSummary.avg" :precision="2" prefix="¥" />
-              </a-col>
-              <a-col :xs="24" :sm="12" :md="6">
-                <a-statistic title="最大值" :value="trendSummary.max" :precision="2" prefix="¥" />
-              </a-col>
-              <a-col :xs="24" :sm="12" :md="6">
-                <a-statistic title="最小值" :value="trendSummary.min" :precision="2" prefix="¥" />
-              </a-col>
-            </a-row>
-
-            <a-spin :spinning="loading">
-              <div class="chart-shell">
-                <div ref="trendChartRef" class="chart-canvas"></div>
-                <div v-if="trendEmpty && !loading" class="chart-overlay">
-                  <a-empty description="暂无趋势数据" />
-                </div>
-              </div>
-            </a-spin>
-          </a-tab-pane>
-          <a-tab-pane key="platform" tab="平台分布">
-            <a-spin :spinning="loading">
-              <div class="chart-shell">
-                <div ref="platformPieRef" class="chart-canvas"></div>
-                <div v-if="pieEmpty && !loading" class="chart-overlay">
-                  <a-empty description="暂无平台借款数据" />
-                </div>
-              </div>
-            </a-spin>
-          </a-tab-pane>
-        </a-tabs>
-      </a-card>
-
-      <a-card title="当日还款记录" size="small">
-        <div v-if="selectedDate">
-          <a-alert type="info" :message="`选中日期：${selectedDate}`" show-icon style="margin-bottom: 8px" />
-          <a-table :columns="recordColumns" :data-source="dailyRecords" row-key="id" size="small" :pagination="false" />
+      <!-- 筛选栏 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #f0f0f0;">
+        <div style="display: flex; gap: 12px;">
+          <DatePicker v-model="statsFilters.month" type="month" style="width: 140px;" />
+          
+          <div style="display: flex; align-items: center; gap: 8px; background: #f5f5f5; padding: 4px; border-radius: 8px;">
+            <button :class="['theme-btn', rangeMode === 'last30' ? 'theme-btn-primary' : 'theme-btn-outline']" style="padding: 8px 14px; font-size: 14px;" @click="rangeMode = 'last30'">最近 30 天</button>
+            <button :class="['theme-btn', rangeMode === 'custom' ? 'theme-btn-primary' : 'theme-btn-outline']" style="padding: 8px 14px; font-size: 14px;" @click="rangeMode = 'custom'">自定义范围</button>
+          </div>
+          
+          <Dropdown v-model="selectedPlatformId" :options="platformSelectOptions" placeholder="全部平台" style="width: 140px;" />
         </div>
-        <a-empty v-else description="在趋势图上点击某一天查看当日记录" />
-      </a-card>
-    </a-space>
-  </div>
+        <button @click="loadStats" class="theme-btn theme-btn-primary" style="padding: 8px 14px; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :style="{ animation: loading ? 'spin 1s linear infinite' : '' }">
+            <polyline points="23,4 23,10 17,10" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
+          刷新
+        </button>
+      </div>
+
+      <!-- 统计卡片 -->
+      <div class="stat-grid" style="margin-bottom: 24px;">
+        <div class="stat-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span class="stat-label">总账单数</span>
+            <div class="stat-icon stat-icon-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14,2 14,8 20,8" />
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" style="color: #141414;">{{ Number(monthlyStats.total_bills || 0) }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span class="stat-label">总金额</span>
+            <div class="stat-icon stat-icon-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23" />
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" style="color: #1677ff;">¥{{ Number(monthlyStats.total_amount || 0).toFixed(2) }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span class="stat-label">已还款</span>
+            <div class="stat-icon stat-icon-success">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22,4 12,14.01 9,11.01" />
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" style="color: #52c41a;">¥{{ Number(monthlyStats.paid_amount || 0).toFixed(2) }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span class="stat-label">未还款</span>
+            <div class="stat-icon stat-icon-warning">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12,6 12,12 16,14" />
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" style="color: #faad14;">¥{{ Number(monthlyStats.unpaid_amount || 0).toFixed(2) }}</div>
+        </div>
+
+        <div class="stat-card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <span class="stat-label">总利息</span>
+            <div class="stat-icon stat-icon-error">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23,6 13.5,15.5 8.5,10.5 1,18" />
+                <polyline points="17,6 23,6 23,12" />
+              </svg>
+            </div>
+          </div>
+          <div class="stat-value" style="color: #ff4d4f;">¥{{ Number(monthlyStats.total_interest || 0).toFixed(2) }}</div>
+        </div>
+      </div>
+
+      <!-- 图表区域 -->
+      <div class="chart-grid" style="margin-bottom: 24px;">
+        <!-- 还款趋势 -->
+        <div class="card">
+          <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+              <polyline points="23,6 13.5,15.5 8.5,10.5 1,18" />
+              <polyline points="17,6 23,6 23,12" />
+            </svg>
+            还款趋势
+          </h3>
+          <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <button :class="['theme-btn', chartType === 'line' ? 'theme-btn-primary' : 'theme-btn-outline']" style="padding: 6px 12px; font-size: 13px;" @click="changeChartType('line')">折线图</button>
+            <button :class="['theme-btn', chartType === 'bar' ? 'theme-btn-primary' : 'theme-btn-outline']" style="padding: 6px 12px; font-size: 13px;" @click="changeChartType('bar')">柱状图</button>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+            <div style="text-align: center; padding: 12px; background: #fafafa; border-radius: 8px;">
+              <div style="font-size: 13px; color: #8c8c8c; margin-bottom: 4px;">总额</div>
+              <div style="font-size: 16px; font-weight: 600; color: #1677ff;">¥{{ Number(trendSummary.total).toFixed(2) }}</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: #fafafa; border-radius: 8px;">
+              <div style="font-size: 13px; color: #8c8c8c; margin-bottom: 4px;">日均</div>
+              <div style="font-size: 16px; font-weight: 600; color: #595959;">¥{{ Number(trendSummary.avg).toFixed(2) }}</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: #fafafa; border-radius: 8px;">
+              <div style="font-size: 13px; color: #8c8c8c; margin-bottom: 4px;">最大值</div>
+              <div style="font-size: 16px; font-weight: 600; color: #52c41a;">¥{{ Number(trendSummary.max).toFixed(2) }}</div>
+            </div>
+            <div style="text-align: center; padding: 12px; background: #fafafa; border-radius: 8px;">
+              <div style="font-size: 13px; color: #8c8c8c; margin-bottom: 4px;">最小值</div>
+              <div style="font-size: 16px; font-weight: 600; color: #faad14;">¥{{ Number(trendSummary.min).toFixed(2) }}</div>
+            </div>
+          </div>
+
+          <div ref="trendChartRef" class="chart-container"></div>
+        </div>
+
+        <!-- 平台分布 -->
+        <div class="card">
+          <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+              <path d="M22 12A10 10 0 0 0 12 2v10z" />
+            </svg>
+            平台借款分布
+          </h3>
+          <div ref="platformPieRef" class="chart-container"></div>
+        </div>
+      </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch, onBeforeUnmount, nextTick } from 'vue';
-import { message } from 'ant-design-vue';
-import { billAPI, debtPlatformAPI, repaymentAPI } from '@/services/api';
-import dayjs from 'dayjs';
-import * as echarts from 'echarts';
-import { formatDate } from '@/services/format';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
+import { billAPI, debtPlatformAPI, repaymentAPI } from '@/services/api'
+import dayjs from 'dayjs'
+import * as echarts from 'echarts'
+import AppLayout from '@/components/Layout/AppLayout.vue'
+import Dropdown from '@/components/ui/Dropdown.vue'
+import DatePicker from '@/components/ui/DatePicker.vue'
 
-const loading = ref(false);
-const route = useRoute();
-const router = useRouter();
-const stateKey = 'repay-record:statistics-state';
-const activeTab = ref('trend');
-const monthlyStats = ref({});
-const platformStats = ref([]);
-const trendChartRef = ref(null);
-let trendChartInstance = null;
-const trendSeries = ref({ dates: [], series: [], nameToPid: {} });
-const trendSummary = ref({ total: 0, avg: 0, max: 0, min: 0 });
-const platformPieRef = ref(null);
-let platformPieInstance = null;
-
-// 趋势筛选相关
-const rangeMode = ref('last30'); // 'last30' | 'custom'
-const customRange = ref([dayjs().subtract(29, 'day'), dayjs()]);
-const selectedPlatformIds = ref([]); // 多选平台
-const chartType = ref('line'); // 'line' | 'bar'
-const platforms = ref([]);
-const platformOptions = computed(() => platforms.value.map(p => ({ value: p.id, label: p.name })));
-const monthlyPlatformSums = ref([]);
+const loading = ref(false)
+const monthlyStats = ref({})
+const platformStats = ref([])
+const trendChartRef = ref(null)
+let trendChartInstance = null
+const platformPieRef = ref(null)
+let platformPieInstance = null
 
 const statsFilters = reactive({
-  month: dayjs()
-});
+  month: dayjs().format('YYYY-MM'),
+})
 
-const repaymentRate = computed(() => {
-  const { total_amount, paid_amount } = monthlyStats.value;
-  if (!total_amount || total_amount === 0) return 0;
-  return ((paid_amount / total_amount) * 100).toFixed(2);
-});
+const rangeMode = ref('last30')
+const selectedPlatformId = ref('')
+const chartType = ref('line')
+const trendSummary = ref({ total: 0, avg: 0, max: 0, min: 0 })
+const trendSeries = ref({ dates: [], series: [] })
 
-const calculateProgress = (item) => {
-  const total = parseFloat(item.total_unpaid) + parseFloat(item.total_paid);
-  if (total === 0) return 0;
-  return ((parseFloat(item.total_paid) / total) * 100).toFixed(2);
-};
+const platforms = ref([])
+
+const platformOptions = computed(() => 
+  platforms.value.map(p => ({ value: p.id, label: p.name }))
+)
+
+const platformSelectOptions = computed(() => [
+  { value: '', label: '全部平台' },
+  ...platformOptions.value
+])
+
+const changeChartType = async (type) => {
+  if (chartType.value === type) return
+  chartType.value = type
+  await nextTick()
+  await loadRepaymentTrend()
+  await nextTick()
+  renderTrendChart()
+}
 
 const loadStats = async () => {
   try {
-    loading.value = true;
-    
-    // 加载月度统计
-    const month = dayjs(statsFilters.month).format('YYYY-MM');
-    const monthlyResponse = await billAPI.getMonthlyStats(month);
-    monthlyStats.value = monthlyResponse;
-    monthlyPlatformSums.value = await billAPI.getMonthlyPlatformSums(month);
-    
-    // 加载平台统计与平台列表
-    const platformResponse = await debtPlatformAPI.getStats();
-    platformStats.value = platformResponse;
-    platforms.value = await debtPlatformAPI.getAll();
-    
-    await loadRepaymentTrend();
-    await ensureActiveChart();
-    
+    loading.value = true
+
+    const month = statsFilters.month
+    const monthlyResponse = await billAPI.getMonthlyStats(month)
+    monthlyStats.value = monthlyResponse
+
+    const platformResponse = await debtPlatformAPI.getStats()
+    platformStats.value = platformResponse
+    platforms.value = await debtPlatformAPI.getAll()
+
+    await loadRepaymentTrend()
+    await nextTick()
+    renderCharts()
+
   } catch (error) {
-    console.error('加载统计数据失败:', error);
-    message.error('加载数据失败');
+    console.error('加载统计数据失败:', error)
+    window.$message?.error('加载数据失败')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
-
-onMounted(() => {
-  initFromQuery();
-  loadStats();
-});
-
-onBeforeUnmount(() => {
-  if (trendChartInstance) {
-    trendChartInstance.dispose();
-    trendChartInstance = null;
-  }
-  if (platformPieInstance) {
-    platformPieInstance.dispose();
-    platformPieInstance = null;
-  }
-  window.removeEventListener('resize', handleResize);
-});
-
-watch(() => statsFilters.month, async () => {
-  syncQuery();
-  await loadStats();
-});
-
-watch(platformStats, () => {
-  renderPlatformPie();
-});
-
-watch([rangeMode, customRange, selectedPlatformIds, chartType], () => {
-  syncQuery();
-  loadRepaymentTrend();
-});
-
-watch(loading, async (value) => {
-  if (!value) {
-    await ensureActiveChart();
-    renderTrendChart();
-    renderPlatformPie();
-  }
-});
-
-const handleTabChange = async (key) => {
-  activeTab.value = key;
-  await ensureActiveChart();
-  if (activeTab.value === 'trend') {
-    renderTrendChart();
-  } else {
-    renderPlatformPie();
-  }
-};
-
-const isVisibleEl = (el) => {
-  if (!el) return false;
-  const rect = el.getBoundingClientRect();
-  return rect.width > 0 && rect.height > 0;
-};
-
-const ensureActiveChart = async () => {
-  if (activeTab.value === 'trend') {
-    await ensureTrendChart();
-  } else {
-    await ensurePlatformPie();
-  }
-};
-
-const ensureTrendChart = async () => {
-  await nextTick();
-  if (!trendChartInstance && trendChartRef.value && isVisibleEl(trendChartRef.value)) {
-    trendChartInstance = echarts.init(trendChartRef.value);
-    window.addEventListener('resize', handleResize);
-    trendChartInstance.on('click', handleTrendClick);
-  }
-  if (trendChartInstance) trendChartInstance.resize();
-};
-
-const ensurePlatformPie = async () => {
-  await nextTick();
-  if (!platformPieInstance && platformPieRef.value && isVisibleEl(platformPieRef.value)) {
-    platformPieInstance = echarts.init(platformPieRef.value);
-  }
-  if (platformPieInstance) platformPieInstance.resize();
-};
-
-const handleResize = () => {
-  if (trendChartInstance) trendChartInstance.resize();
-  if (platformPieInstance) platformPieInstance.resize();
-};
+}
 
 const loadRepaymentTrend = async () => {
   try {
-    const { start, end } = getSelectedRange();
-    const dates = buildDateArray(start, end);
-    const nameToPid = {};
+    const { start, end } = getSelectedRange()
+    const dates = buildDateArray(start, end)
 
-    let series = [];
-    if (!selectedPlatformIds.value || selectedPlatformIds.value.length === 0) {
-      const rows = await repaymentAPI.getDailyTrend(start, end);
-      const amounts = mapRowsToAmounts(rows, dates);
-      series = [{ name: '全部平台', type: chartType.value, smooth: true, data: amounts, areaStyle: chartType.value === 'line' ? { opacity: 0.15 } : undefined }];
-      updateSummary(amounts);
+    let series = []
+    if (!selectedPlatformId.value) {
+      const rows = await repaymentAPI.getDailyTrend(start, end)
+      const amounts = mapRowsToAmounts(rows, dates)
+      series = [{ 
+        name: '全部平台', 
+        type: chartType.value, 
+        smooth: chartType.value === 'line',
+        data: amounts,
+        areaStyle: chartType.value === 'line' ? { opacity: 0.15 } : undefined,
+        lineStyle: { width: 3 },
+        itemStyle: { color: '#1677ff' },
+        barMaxWidth: 40
+      }]
+      updateSummary(amounts)
     } else {
-      const allAmountsPerPlatform = [];
-      for (const pid of selectedPlatformIds.value) {
-        const rows = await repaymentAPI.getDailyTrend(start, end, pid);
-        const amounts = mapRowsToAmounts(rows, dates);
-        const name = platforms.value.find(p => p.id === pid)?.name || `平台${pid}`;
-        nameToPid[name] = pid;
-        allAmountsPerPlatform.push(amounts);
-        series.push({ name, type: chartType.value, smooth: chartType.value === 'line', data: amounts, areaStyle: chartType.value === 'line' ? { opacity: 0.12 } : undefined });
-      }
-      const aggregated = aggregateAmounts(allAmountsPerPlatform, dates.length);
-      updateSummary(aggregated);
+      const rows = await repaymentAPI.getDailyTrend(start, end, selectedPlatformId.value)
+      const amounts = mapRowsToAmounts(rows, dates)
+      const name = platforms.value.find(p => p.id === selectedPlatformId.value)?.name || '未知平台'
+      series = [{ 
+        name, 
+        type: chartType.value, 
+        smooth: chartType.value === 'line',
+        data: amounts,
+        areaStyle: chartType.value === 'line' ? { opacity: 0.12 } : undefined,
+        lineStyle: { width: 3 },
+        itemStyle: { color: '#1677ff' },
+        barMaxWidth: 40
+      }]
+      updateSummary(amounts)
     }
-    trendSeries.value = { dates, series, nameToPid };
-    renderTrendChart();
+    trendSeries.value = { dates, series }
   } catch (error) {
-    console.error('加载还款趋势失败:', error);
+    console.error('加载还款趋势失败:', error)
   }
-};
+}
 
-const syncQuery = () => {
-  const query = {};
-  if (statsFilters.month) query.month = dayjs(statsFilters.month).format('YYYY-MM');
-  if (rangeMode.value) query.range_mode = rangeMode.value;
-  if (rangeMode.value === 'custom' && customRange.value && customRange.value.length === 2) {
-    query.start_date = dayjs(customRange.value[0]).format('YYYY-MM-DD');
-    query.end_date = dayjs(customRange.value[1]).format('YYYY-MM-DD');
-  }
-  if (selectedPlatformIds.value && selectedPlatformIds.value.length > 0) {
-    query.platform_ids = selectedPlatformIds.value.join(',');
-  }
-  if (chartType.value) query.chart_type = chartType.value;
-  router.replace({ query });
-  saveState();
-};
-
-const initFromQuery = () => {
-  const { month, range_mode, start_date, end_date, platform_ids, chart_type } = route.query;
-  const hasQuery = [month, range_mode, start_date, end_date, platform_ids, chart_type].some(v => v !== undefined);
-  if (!hasQuery) {
-    restoreState();
-    return;
-  }
-  if (month) statsFilters.month = dayjs(month);
-  if (range_mode === 'custom' || range_mode === 'last30') rangeMode.value = range_mode;
-  if (start_date && end_date) customRange.value = [dayjs(start_date), dayjs(end_date)];
-  if (platform_ids) {
-    const ids = String(platform_ids).split(',').map(id => parseInt(id, 10)).filter(id => Number.isInteger(id));
-    selectedPlatformIds.value = ids;
-  }
-  if (chart_type === 'line' || chart_type === 'bar') chartType.value = chart_type;
-};
-
-const saveState = () => {
-  const payload = {
-    month: statsFilters.month ? dayjs(statsFilters.month).format('YYYY-MM') : null,
-    rangeMode: rangeMode.value,
-    customRange: customRange.value && customRange.value.length === 2
-      ? [
-        dayjs(customRange.value[0]).format('YYYY-MM-DD'),
-        dayjs(customRange.value[1]).format('YYYY-MM-DD')
-      ]
-      : null,
-    platformIds: selectedPlatformIds.value,
-    chartType: chartType.value
-  };
-  try {
-    localStorage.setItem(stateKey, JSON.stringify(payload));
-  } catch (_) {}
-};
-
-const restoreState = () => {
-  try {
-    const raw = localStorage.getItem(stateKey);
-    if (!raw) return false;
-    const parsed = JSON.parse(raw);
-    if (parsed?.month) statsFilters.month = dayjs(parsed.month);
-    if (parsed?.rangeMode === 'custom' || parsed?.rangeMode === 'last30') rangeMode.value = parsed.rangeMode;
-    if (parsed?.customRange && parsed.customRange.length === 2) {
-      customRange.value = [dayjs(parsed.customRange[0]), dayjs(parsed.customRange[1])];
-    }
-    if (Array.isArray(parsed?.platformIds)) selectedPlatformIds.value = parsed.platformIds;
-    if (parsed?.chartType === 'line' || parsed?.chartType === 'bar') chartType.value = parsed.chartType;
-    return true;
-  } catch (_) {
-    return false;
-  }
-};
+const renderCharts = () => {
+  renderTrendChart()
+  renderPlatformPie()
+}
 
 const renderTrendChart = () => {
-  if (!trendChartInstance) return;
+  if (!trendChartRef.value) return
+  
+  if (!trendChartInstance) {
+    trendChartInstance = echarts.init(trendChartRef.value)
+  }
+  
   const option = {
-    tooltip: { trigger: 'axis' },
-    legend: { top: 4 },
-    xAxis: { type: 'category', data: trendSeries.value.dates },
-    yAxis: { type: 'value', name: '金额(¥)' },
-    grid: { left: 40, right: 20, top: 40, bottom: 40 },
+    tooltip: { 
+      trigger: 'axis',
+      backgroundColor: 'rgba(255,255,255,0.98)',
+      borderColor: '#e8e8e8',
+      borderWidth: 1,
+      textStyle: { color: '#141414', fontSize: 13 },
+      padding: [12, 16],
+      extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px;'
+    },
+    grid: { left: 60, right: 20, top: 20, bottom: 40 },
+    xAxis: { 
+      type: 'category', 
+      data: trendSeries.value.dates,
+      axisLabel: { rotate: 45, fontSize: 12, color: '#8c8c8c' },
+      axisLine: { lineStyle: { color: '#e8e8e8' } }
+    },
+    yAxis: { 
+      type: 'value', 
+      name: '金额 (¥)',
+      axisLabel: { fontSize: 12, color: '#8c8c8c', formatter: (value) => '¥' + value },
+      axisLine: { lineStyle: { color: '#e8e8e8' } },
+      splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } }
+    },
     series: trendSeries.value.series
-  };
-  trendChartInstance.setOption(option);
-};
-
-function getSelectedRange() {
-  if (rangeMode.value === 'custom' && customRange.value && customRange.value.length === 2) {
-    return {
-      start: dayjs(customRange.value[0]).format('YYYY-MM-DD'),
-      end: dayjs(customRange.value[1]).format('YYYY-MM-DD')
-    };
-  } else {
-    const start = dayjs().subtract(29, 'day').format('YYYY-MM-DD');
-    const end = dayjs().format('YYYY-MM-DD');
-    return { start, end };
   }
+  trendChartInstance.setOption(option, true)
 }
-
-function buildDateArray(start, end) {
-  const dates = [];
-  let cursor = dayjs(start);
-  const last = dayjs(end);
-  while (cursor.isBefore(last) || cursor.isSame(last, 'day')) {
-    dates.push(cursor.format('YYYY-MM-DD'));
-    cursor = cursor.add(1, 'day');
-  }
-  return dates;
-}
-
-function mapRowsToAmounts(rows, dates) {
-  const map = new Map();
-  rows.forEach(r => map.set(dayjs(r.date).format('YYYY-MM-DD'), parseFloat(r.total_amount)));
-  return dates.map(d => map.get(d) || 0);
-}
-
-function aggregateAmounts(listOfAmounts, length) {
-  const result = new Array(length).fill(0);
-  for (const arr of listOfAmounts) {
-    for (let i = 0; i < length; i++) {
-      result[i] += arr[i] || 0;
-    }
-  }
-  return result;
-}
-
-function updateSummary(amounts) {
-  const total = amounts.reduce((s, v) => s + (v || 0), 0);
-  const max = amounts.reduce((m, v) => v > m ? v : m, 0);
-  const min = amounts.reduce((m, v) => v < m ? v : m, amounts.length ? amounts[0] : 0);
-  const avg = amounts.length ? total / amounts.length : 0;
-  trendSummary.value = { total, avg, max, min };
-}
-
-const selectedDate = ref('');
-const dailyRecords = ref([]);
-const recordColumns = [
-  { title: '平台', dataIndex: 'platform_name', key: 'platform_name' },
-  { title: '金额', dataIndex: 'amount', key: 'amount', width: 100, customRender: ({ text }) => `¥${parseFloat(text || 0).toFixed(2)}` },
-  { title: '还款日期', dataIndex: 'repayment_date', key: 'repayment_date', width: 120, customRender: ({ text }) => formatDate(text) },
-  { title: '备注', dataIndex: 'notes', key: 'notes' }
-];
-
-async function handleTrendClick(params) {
-  try {
-    const date = params.name; // x轴日期
-    selectedDate.value = date;
-    const pid = trendSeries.value.nameToPid[params.seriesName] || undefined;
-    const rows = await repaymentAPI.getByDateRange(date, date, pid);
-    dailyRecords.value = rows.map(r => ({
-      ...r,
-      amount: parseFloat(r.amount)
-    }));
-  } catch (e) {
-    // 忽略错误
-  }
-}
-
-// 平台负债饼图
-const initPlatformPie = () => {
-  if (platformPieRef.value) {
-    platformPieInstance = echarts.init(platformPieRef.value);
-    // 初始化后立即尝试渲染当前数据（若已有）
-    renderPlatformPie();
-  }
-};
 
 const renderPlatformPie = () => {
-  if (!platformPieInstance) return;
-  const stats = monthlyPlatformSums.value || [];
-  const total = stats.reduce((s, it) => s + parseFloat(it.total_amount || 0), 0);
+  if (!platformPieRef.value) return
+  if (!platformPieInstance) {
+    platformPieInstance = echarts.init(platformPieRef.value)
+  }
+
+  const stats = platformStats.value || []
   const data = stats.map(item => ({
-    name: item.platform_name,
-    value: parseFloat(item.total_amount || 0)
-  })).filter(d => d.value > 0);
+    name: item.name,
+    value: parseFloat(item.total_unpaid || 0) + parseFloat(item.total_paid || 0)
+  })).filter(d => d.value > 0)
+
   const option = {
-    title: { text: `当月平台借款分布（总计 ¥${total.toFixed(2)}）`, left: 'center' },
-    tooltip: { trigger: 'item', formatter: ({ name, value, percent }) => `${name}: ¥${Number(value).toFixed(2)} (${percent}%)` },
-    legend: { type: 'scroll', bottom: 0 },
-    series: [
-      {
-        type: 'pie',
-        radius: ['40%', '70%'],
-        avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-        label: {
-          show: true,
-          formatter: (params) => `${params.name}\n¥${Number(params.value).toFixed(2)}`
-        },
-        data
-      }
-    ]
-  };
-  platformPieInstance.setOption(option);
-};
+    tooltip: { 
+      trigger: 'item',
+      backgroundColor: 'rgba(255,255,255,0.98)',
+      borderColor: '#e8e8e8',
+      borderWidth: 1,
+      textStyle: { color: '#141414', fontSize: 13 },
+      padding: [12, 16],
+      extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px;'
+    },
+    legend: { 
+      type: 'scroll', 
+      bottom: 10,
+      left: 'center',
+      textStyle: { color: '#595959', fontSize: 12 },
+      icon: 'circle',
+      itemWidth: 10,
+      itemHeight: 10
+    },
+    color: ['#1677ff', '#52c41a', '#faad14', '#ff4d4f', '#722ed1', '#13c2c2', '#eb2f96', '#f5222d'],
+    series: [{
+      type: 'pie',
+      radius: ['40%', '75%'],
+      center: ['50%', '50%'],
+      itemStyle: {
+        borderRadius: 8,
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      label: {
+        show: true,
+        fontSize: 12,
+        formatter: (params) => `{name|${params.name}}\n{value|¥${Number(params.value).toFixed(2)}}`,
+        rich: {
+          name: { fontSize: 12, color: '#595959', lineHeight: 18 },
+          value: { fontSize: 13, color: '#1677ff', lineHeight: 20, fontWeight: 600 }
+        }
+      },
+      data
+    }]
+  }
+  platformPieInstance.setOption(option)
+}
 
-const pieEmpty = computed(() => {
-  if (loading.value) return false;
-  const stats = monthlyPlatformSums.value || [];
-  if (stats.length === 0) return true;
-  return stats.every(item => parseFloat(item.total_amount || 0) <= 0);
-});
+const getSelectedRange = () => {
+  const start = dayjs().subtract(29, 'day').format('YYYY-MM-DD')
+  const end = dayjs().format('YYYY-MM-DD')
+  return { start, end }
+}
 
-const trendEmpty = computed(() => {
-  if (loading.value) return false;
-  const series = trendSeries.value.series || [];
-  if (series.length === 0) return true;
-  return series.every(s => Array.isArray(s.data) && s.data.every(v => Number(v) === 0));
-});
+const buildDateArray = (start, end) => {
+  const dates = []
+  let cursor = dayjs(start)
+  const last = dayjs(end)
+  while (cursor.isBefore(last) || cursor.isSame(last, 'day')) {
+    dates.push(cursor.format('YYYY-MM-DD'))
+    cursor = cursor.add(1, 'day')
+  }
+  return dates
+}
 
+const mapRowsToAmounts = (rows, dates) => {
+  const map = new Map()
+  rows.forEach(r => map.set(dayjs(r.date).format('YYYY-MM-DD'), parseFloat(r.total_amount)))
+  return dates.map(d => map.get(d) || 0)
+}
+
+const updateSummary = (amounts) => {
+  const total = amounts.reduce((s, v) => s + (v || 0), 0)
+  const max = amounts.reduce((m, v) => v > m ? v : m, 0)
+  const min = amounts.length ? amounts.reduce((m, v) => v < m ? v : m, amounts[0]) : 0
+  const avg = amounts.length ? total / amounts.length : 0
+  trendSummary.value = { total, avg, max, min }
+}
+
+watch(() => statsFilters.month, () => {
+  loadStats()
+})
+
+watch([rangeMode, selectedPlatformId], () => {
+  loadStats()
+})
+
+onMounted(() => {
+  loadStats()
+  
+  window.addEventListener('resize', () => {
+    trendChartInstance?.resize()
+    platformPieInstance?.resize()
+  })
+})
 </script>
 
 <style scoped>
-.statistics {
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
   padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s;
 }
 
-.filters-card {
-  background: #fff;
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
-.charts-card {
-  background: #fff;
+.stat-label {
+  font-size: 14px;
+  color: #8c8c8c;
 }
 
-.chart-shell {
-  height: 360px;
-  position: relative;
-}
-
-.chart-canvas {
-  width: 100%;
-  height: 100%;
-}
-
-.chart-overlay {
-  position: absolute;
-  inset: 0;
+.stat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.7);
+}
+
+.stat-icon-primary { background: linear-gradient(135deg, #e6f4ff 0%, #bae0ff 100%); color: #1677ff; }
+.stat-icon-success { background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%); color: #52c41a; }
+.stat-icon-warning { background: linear-gradient(135deg, #fffbe6 0%, #ffe58f 100%); color: #faad14; }
+.stat-icon-error { background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%); color: #ff4d4f; }
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+}
+
+.card-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #141414;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+}
+
+.chart-container {
+  width: 100%;
+  height: 320px;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.theme-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-btn-primary {
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  color: white;
+  box-shadow: 0 2px 6px rgba(22, 119, 255, 0.3);
+}
+
+.theme-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.4);
+}
+
+.theme-btn-outline {
+  background: #f5f5f5;
+  color: #595959;
+  border: 1px solid #d9d9d9;
+}
+
+.theme-btn-outline:hover {
+  background: #e6f4ff;
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+@media (max-width: 1400px) {
+  .stat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

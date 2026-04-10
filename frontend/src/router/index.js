@@ -9,7 +9,7 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/Dashboard.vue'),
-    meta: { title: '仪表盘' }
+    meta: { title: '数据概览' }
   },
   {
     path: '/platforms',
@@ -33,14 +33,14 @@ const routes = [
     path: '/statistics',
     name: 'Statistics',
     component: () => import('@/views/Statistics.vue'),
-    meta: { title: '数据统计' }
+    meta: { title: '还款统计' }
   }
   ,
   {
     path: '/settings',
     name: 'Settings',
     component: () => import('@/views/Settings.vue'),
-    meta: { title: '系统设置' }
+    meta: { title: '平台设置' }
   }
 ];
 

@@ -2,21 +2,32 @@
   "name": "repay-record-frontend",
   "version": "1.0.0",
   "description": "借款还款数据管理前端",
+  "type": "module",
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "dev": "vue-cli-service serve --mode development"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "ant-design-vue": "^4.0.0",
+    "@ant-design/icons-vue": "^7.0.1",
+    "@vueuse/core": "^14.2.1",
     "axios": "^1.4.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dayjs": "^1.11.9",
     "echarts": "^6.0.0",
+    "radix-vue": "^1.9.17",
+    "tailwind-merge": "^3.5.0",
     "vue": "^3.3.4",
     "vue-router": "^4.2.4"
   },
   "devDependencies": {
-    "@vue/cli-service": "^5.0.8",
-    "baseline-browser-mapping": "^2.9.19"
+    "@tailwindcss/postcss": "^4.2.2",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.9",
+    "tailwindcss": "^4.2.2",
+    "terser": "^5.46.1",
+    "vite": "^8.0.8"
   }
 }
