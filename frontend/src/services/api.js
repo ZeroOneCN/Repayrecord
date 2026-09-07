@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VUE_APP_API_BASE_URL || '/api'
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || import.meta.env.VUE_APP_API_BASE_URL || '/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,18 +11,6 @@ const api = axios.create({
   }
 })
 
-// 请求拦截器
-api.interceptors.request.use(
-  (config) => {
-    console.log('发起请求:', config.method?.toUpperCase(), config.url)
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
-
-// 响应拦截器
 api.interceptors.response.use(
   (response) => {
     return response.data

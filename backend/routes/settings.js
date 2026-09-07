@@ -1,5 +1,6 @@
 const express = require('express');
 const Setting = require('../models/Setting');
+const { restartReminderScheduler } = require('../services/reminderScheduler');
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ router.put('/', async (req, res) => {
   try {
     const data = req.body || {};
     await Setting.setMany(data);
+    await restartReminderScheduler();
     res.json({ message: '设置已保存' });
   } catch (error) {
     res.status(500).json({ error: error.message });

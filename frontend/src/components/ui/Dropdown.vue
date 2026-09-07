@@ -1,6 +1,5 @@
 <template>
   <div class="dropdown-container">
-    <!-- 触发器 -->
     <div
       ref="triggerRef"
       class="dropdown-trigger"
@@ -9,28 +8,41 @@
     >
       <span v-if="selectedLabel" class="dropdown-selected">{{ selectedLabel }}</span>
       <span v-else class="dropdown-placeholder">{{ placeholder }}</span>
-      <svg class="dropdown-arrow" :class="{ 'dropdown-arrow-rotate': isOpen }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg
+        class="dropdown-arrow"
+        :class="{ 'dropdown-arrow-rotate': isOpen }"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
         <polyline points="6,9 12,15 18,9" />
       </svg>
     </div>
 
-    <!-- 下拉菜单 -->
-    <div v-if="isOpen" class="dropdown-menu" :style="menuStyle" ref="menuRef">
-      <div
-        v-for="option in options"
-        :key="option.value"
-        class="dropdown-item"
-        :class="{ 'dropdown-item-selected': modelValue === option.value }"
-        @click="selectOption(option)"
-      >
-        {{ option.label }}
+    <Teleport to="body">
+      <div v-if="isOpen" ref="menuRef" class="dropdown-menu" :style="menuStyle">
+        <div
+          v-for="option in options"
+          :key="option.value"
+          class="dropdown-item"
+          :class="{ 'dropdown-item-selected': modelValue === option.value }"
+          @click="selectOption(option)"
+        >
+          {{ option.label }}
+        </div>
+        <div v-if="!options.length" class="dropdown-item dropdown-item-empty">
+          暂无可选项
+        </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -59,18 +71,21 @@ const triggerRef = ref(null)
 const menuRef = ref(null)
 const menuStyle = ref({})
 
+const floatingGap = 8
+const viewportMargin = 12
+
 const selectedLabel = computed(() => {
-  const option = props.options.find(o => o.value === props.modelValue)
+  const option = props.options.find((item) => item.value === props.modelValue)
   return option?.label || ''
 })
 
-const toggleDropdown = () => {
+const toggleDropdown = async () => {
   if (props.disabled) return
+
   isOpen.value = !isOpen.value
   if (isOpen.value) {
-    nextTick(() => {
-      updateMenuPosition()
-    })
+    await nextTick()
+    updateMenuPosition()
   }
 }
 
@@ -86,49 +101,60 @@ const selectOption = (option) => {
 
 const updateMenuPosition = () => {
   if (!triggerRef.value || !menuRef.value) return
-  
+
   const rect = triggerRef.value.getBoundingClientRect()
-  const scrollTop = window.scrollY || document.documentElement.scrollTop
-  const scrollLeft = window.scrollX || document.documentElement.scrollLeft
-  
+  const menuWidth = rect.width
+  const menuHeight = menuRef.value.offsetHeight
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  const shouldOpenUp = rect.bottom + floatingGap + menuHeight > viewportHeight - viewportMargin
+
+  const maxLeft = viewportWidth - menuWidth - viewportMargin
+  const left = Math.min(Math.max(rect.left, viewportMargin), Math.max(viewportMargin, maxLeft))
+  const top = shouldOpenUp
+    ? Math.max(viewportMargin, rect.top - menuHeight - floatingGap)
+    : Math.min(rect.bottom + floatingGap, viewportHeight - menuHeight - viewportMargin)
+
   menuStyle.value = {
     position: 'fixed',
-    top: `${rect.bottom + scrollTop + 8}px`,
-    left: `${rect.left + scrollLeft}px`,
-    width: `${rect.width}px`,
+    top: `${top}px`,
+    left: `${left}px`,
+    width: `${menuWidth}px`,
     zIndex: 10000,
     maxHeight: '280px',
-    overflowY: 'auto'
+    overflowY: 'auto',
+    transformOrigin: shouldOpenUp ? 'bottom center' : 'top center'
   }
 }
 
 const handleClickOutside = (event) => {
   if (!isOpen.value) return
-  
+
   const isClickOnTrigger = triggerRef.value?.contains(event.target)
   const isClickOnMenu = menuRef.value?.contains(event.target)
-  
   if (!isClickOnTrigger && !isClickOnMenu) {
     closeDropdown()
   }
 }
 
-const handleScroll = () => {
-  if (isOpen.value) {
-    closeDropdown()
-  }
+const handleViewportChange = () => {
+  if (!isOpen.value) return
+
+  nextTick(() => {
+    updateMenuPosition()
+  })
 }
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  window.addEventListener('scroll', handleScroll)
-  window.addEventListener('resize', handleScroll)
+  window.addEventListener('resize', handleViewportChange)
+  document.addEventListener('scroll', handleViewportChange, true)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
-  window.removeEventListener('scroll', handleScroll)
-  window.removeEventListener('resize', handleScroll)
+  window.removeEventListener('resize', handleViewportChange)
+  document.removeEventListener('scroll', handleViewportChange, true)
 })
 </script>
 
@@ -143,23 +169,25 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  background: white;
+  min-height: 50px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 15px;
+  font-size: 16px;
   user-select: none;
+  gap: 10px;
 }
 
 .dropdown-trigger:hover {
-  border-color: #1677ff;
+  border-color: rgba(22, 163, 74, 0.35);
 }
 
 .dropdown-focused {
-  border-color: #1677ff;
-  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+  border-color: rgba(22, 163, 74, 0.35);
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.1);
 }
 
 .dropdown-disabled {
@@ -169,16 +197,20 @@ onUnmounted(() => {
 }
 
 .dropdown-selected {
-  color: #141414;
+  color: var(--text-strong);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dropdown-placeholder {
-  color: #8c8c8c;
+  color: var(--text-muted);
 }
 
 .dropdown-arrow {
   transition: transform 0.2s;
-  color: #8c8c8c;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -187,31 +219,41 @@ onUnmounted(() => {
 }
 
 .dropdown-menu {
-  background: white;
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  box-shadow: 0 18px 38px rgba(21, 45, 33, 0.12);
   padding: 8px;
   z-index: 10000;
+  backdrop-filter: blur(12px);
 }
 
 .dropdown-item {
-  padding: 10px 14px;
-  border-radius: 6px;
+  padding: 11px 14px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
   font-size: 15px;
-  color: #595959;
+  color: var(--text-base);
   user-select: none;
 }
 
 .dropdown-item:hover {
-  background: #f5f5f5;
+  background: var(--surface-subtle);
 }
 
 .dropdown-item-selected {
-  background: #e6f4ff;
-  color: #1677ff;
-  font-weight: 500;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.dropdown-item-empty {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.dropdown-item-empty:hover {
+  background: transparent;
 }
 </style>

@@ -1,10 +1,25 @@
 const { query } = require('../config/database');
 
 class RepaymentRecord {
+  static getSelectFields() {
+    return `
+      rr.id,
+      rr.bill_id,
+      b.platform_id,
+      rr.amount,
+      rr.repayment_date,
+      rr.interest,
+      b.interest AS bill_interest,
+      rr.notes,
+      rr.created_at,
+      dp.name AS platform_name
+    `;
+  }
+
   // 获取所有还款记录（联合账单与平台，避免前端多次请求）
   static async getAllWithPlatform() {
     const sql = `
-      SELECT rr.*, rr.interest, dp.name as platform_name
+      SELECT ${this.getSelectFields()}
       FROM repayment_records rr
       JOIN bills b ON rr.bill_id = b.id
       JOIN debt_platforms dp ON b.platform_id = dp.id
@@ -40,7 +55,7 @@ class RepaymentRecord {
     const offset = Math.max(0, Math.floor((safePage - 1) * safeSize));
     const limit = Math.floor(safeSize);
     const sql = `
-      SELECT rr.*, rr.interest, dp.name as platform_name
+      SELECT ${this.getSelectFields()}
       FROM repayment_records rr
       JOIN bills b ON rr.bill_id = b.id
       JOIN debt_platforms dp ON b.platform_id = dp.id
@@ -64,7 +79,7 @@ class RepaymentRecord {
     }
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const sql = `
-      SELECT rr.*, rr.interest, dp.name as platform_name
+      SELECT ${this.getSelectFields()}
       FROM repayment_records rr
       JOIN bills b ON rr.bill_id = b.id
       JOIN debt_platforms dp ON b.platform_id = dp.id
@@ -148,7 +163,7 @@ class RepaymentRecord {
   // 按日期范围获取还款记录列表
   static async getByDateRange(start_date, end_date, platform_id = null) {
     let sql = `
-      SELECT rr.*, dp.name as platform_name
+      SELECT ${this.getSelectFields()}
       FROM repayment_records rr
       JOIN bills b ON rr.bill_id = b.id
       JOIN debt_platforms dp ON b.platform_id = dp.id
